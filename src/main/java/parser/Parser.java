@@ -1,14 +1,8 @@
 package parser;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import org.bson.BsonArray;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
@@ -19,11 +13,6 @@ import org.bson.BsonValue;
  */
 public class Parser {
 
-    private static final int WORK_UNIT_SIZE = 8192;
-    public static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
-
-    private static BsonDocument diff;
-
     /**
      * Computes the diff between two bson documents
      * @param before The bson document before modification
@@ -31,9 +20,9 @@ public class Parser {
      * @return A document containing the difference between the provided documents
      */
     public static BsonDocument parse(BsonDocument before, BsonDocument after) {
-        diff = new BsonDocument();
-        computeDiffDict(before, after, diff);
-        return diff;
+        BsonDocument result = new BsonDocument();
+        computeDiffDict(before, after, result);
+        return result;
     }
 
     /**
@@ -55,9 +44,7 @@ public class Parser {
             }
             computeDiffList(before.asArray(), after.asArray(), diff.getDocument(key), key);
         } else {
-            synchronized (diff) {
-                diff.put(key, before);
-            }
+            diff.put(key, before);
         }
     }
 
@@ -68,39 +55,6 @@ public class Parser {
         Set<String> keys = new HashSet<>();
         keys.addAll(before.keySet());
         keys.addAll(after.keySet());
-
-        if (keys.size() >= WORK_UNIT_SIZE) {
-            Iterator<String> itr = keys.iterator();
-            List<Set<String>> partitions = new ArrayList<>();
-            partitions.add(new HashSet<>());
-            final CountDownLatch latch = new CountDownLatch((keys.size() / WORK_UNIT_SIZE));
-
-            int iteration = 0;
-            while (itr.hasNext()) {
-                if (partitions.get(iteration).size() < WORK_UNIT_SIZE) {
-                    partitions.get(iteration).add(itr.next());
-                }
-
-                if  (partitions.get(iteration).size() == WORK_UNIT_SIZE || !itr.hasNext()) {
-                    int finalIteration = iteration;
-                    executor.submit(() -> {
-                        for (String key : partitions.get(finalIteration)) {
-                            computeDiff(before.get(key), after.get(key), diff, key);
-                        }
-                        latch.countDown();
-                    });
-                    partitions.add(new HashSet<>());
-                    iteration++;
-                }
-            }
-
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            return;
-        }
 
         for (String key : keys) {
             BsonValue old = before.get(key);

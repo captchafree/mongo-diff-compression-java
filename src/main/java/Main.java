@@ -1,14 +1,10 @@
-import com.mongodb.BulkUpdateRequestBuilder;
-import com.mongodb.BulkWriteOperation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonObjectId;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import parser.Operations;
 import parser.Parser;
 
 public class Main {
@@ -42,9 +38,10 @@ public class Main {
             + "}";
 
     public static void main(String[] args) {
-        // runBenchmark();
+        runBenchmark();
         // System.out.println(Parser.parse(BsonDocument.parse(beforeJson), BsonDocument.parse(afterJson)));
 
+        /*
         BsonDocument before = new BsonDocument();
         BsonDocument after = new BsonDocument();
 
@@ -61,7 +58,6 @@ public class Main {
             long end = System.currentTimeMillis();
             times[i] = end-start;
         }
-        Parser.executor.shutdown();
 
         //BsonDocument result = Parser.parse(before, after);
         //System.out.println(result.toJson());
@@ -72,6 +68,7 @@ public class Main {
             sum += times[i];
         }
         System.out.println(sum/times.length);
+         */
     }
 
     private static void runBenchmark() {
@@ -89,7 +86,7 @@ public class Main {
 
             if (i % 2000 == 0) {
                 long now = System.currentTimeMillis();
-                System.out.println("2000 processed in " + (now-middle)/1000 + " seconds");
+                System.out.println("2000 processed in " + (now-middle)/1000.0 + " seconds");
                 middle = now;
             }
         }
