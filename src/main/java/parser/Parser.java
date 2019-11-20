@@ -1,8 +1,12 @@
 package parser;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import org.bson.BsonArray;
@@ -51,9 +55,9 @@ public class Parser {
             }
             computeDiffList(before.asArray(), after.asArray(), diff.getDocument(key), key);
         } else {
-            //synchronized (diff) {
+            synchronized (diff) {
                 diff.put(key, before);
-            //}
+            }
         }
     }
 
@@ -65,7 +69,6 @@ public class Parser {
         keys.addAll(before.keySet());
         keys.addAll(after.keySet());
 
-        /*
         if (keys.size() >= WORK_UNIT_SIZE) {
             Iterator<String> itr = keys.iterator();
             List<Set<String>> partitions = new ArrayList<>();
@@ -98,8 +101,6 @@ public class Parser {
             }
             return;
         }
-
-         */
 
         for (String key : keys) {
             BsonValue old = before.get(key);
